@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
 from mainwindow import Ui_MainWindow
 from zip_file_filter import zipFileFilter
 from my_thread_pool import MyThreadPool
+from type_log.type_log import *
 
 
 class QMyMainWindow(QMainWindow):
@@ -18,6 +19,8 @@ class QMyMainWindow(QMainWindow):
         self.run_thread.finished.connect(self.signal_call_back)
 
         self.set_connect_callback()
+        self.log_handle = TypeLog(log_type=LOG_FILE_APPEND, log_file='operation_log')
+        return
 
     def change_to_step_rule_label(self):
         self.ui.label_rule_item1.setText('Begin Token')
@@ -94,28 +97,28 @@ class QMyMainWindow(QMainWindow):
         self.ui.lineEdit_rule_item1.clear()
         self.ui.lineEdit_rule_item2.clear()
         self.ui.lineEdit_rule_item3.clear()
+
         return
 
     def choose_unzip_file(self):
-        print("choose_unzip_file")
         file_name, file_type = QFileDialog.getOpenFileName(None, 'choose parse file')
         if file_name == '':
             return
 
         self.file_filter.set_zip_file(file_name)
         self.ui.lineEdit_zip_file.setText(file_name)
-        print(file_name)
+        self.log_handle.logging('parse zip file', LOG_WARNING, 'choose unzip file :%s.' % file_name)
         return
 
     def choose_dir(self):
-        print('choose_dir')
         path = QFileDialog.getExistingDirectory(None, "choose the unzip dir", "/")
         if path == '':
             return
 
         self.file_filter.set_unzip_path(path)
         self.ui.lineEdit_unzip_path.setText(path)
-        print(path)
+
+        self.log_handle.logging('parse zip file', LOG_WARNING, 'choose unzip dir :%s.' % path)
         return
 
     def signal_call_back(self, data):
@@ -126,7 +129,6 @@ class QMyMainWindow(QMainWindow):
         return
 
     def match_file_of_filter_rule(self, msg):
-        print('match_file_of_filter_rule')
         self.file_filter.extract_all_file()
         self.file_filter.match_file_by_filter_rule()
         if msg == 'match_file':
@@ -134,6 +136,7 @@ class QMyMainWindow(QMainWindow):
         elif msg == 'show_file_list':
             result_data = self.file_filter.get_filter_result_file_list()
         elif msg == 'export_result':
+            self.log_handle.logging('parse zip file', LOG_ERROR, 'wrong msg.')
             return 'wrong msg'
 
         return result_data
@@ -145,12 +148,10 @@ class QMyMainWindow(QMainWindow):
 
     def show_file_list(self):
         self.disable_all_button()
-        print('show_file_list')
         self.run_thread.submit(self.match_file_of_filter_rule, 'show_file_list')
         return
 
     def export_result_info(self):
-        print('export_result_info')
         self.disable_all_button()
         self.run_thread.submit(self.match_file_of_filter_rule, 'export_result')
         return
@@ -190,25 +191,27 @@ class QMyMainWindow(QMainWindow):
         rule_rows = self.get_rule_display_rows()
 
         result_info = self.file_filter.filter_rule_add(rule_type, rule_msg, rule_rows)
-        print(result_info)
 
         rule_display = self.file_filter.filter_rule_get_display()
         self.ui.textEdit_rule_display.setText(rule_display)
         self.clear_rule_input_window()
+        self.log_handle.logging('parse zip file', LOG_WARNING, 'add new rule: type %s, msg:%s, result:%s.' %
+                                (rule_type, rule_msg, result_info))
+
         return
 
     def rule_delete_process(self):
-        print('rule delete process')
         rule_type, rule_msg = self.get_rule_content()
         if len(rule_msg) == 0:
             return
 
         result_info = self.file_filter.filter_rule_delete(rule_type, rule_msg)
-        print(result_info)
 
         rule_display = self.file_filter.filter_rule_get_display()
         self.ui.textEdit_rule_display.setText(rule_display)
         self.clear_rule_input_window()
+        self.log_handle.logging('parse zip file', LOG_WARNING, 'delete rule: type %s, msg:%s, result:%s.' %
+                                (rule_type, rule_msg, result_info))
         return
 
     def rule_clear_process(self):
@@ -219,6 +222,8 @@ class QMyMainWindow(QMainWindow):
         rule_display = self.file_filter.filter_rule_get_display()
         self.ui.textEdit_rule_display.setText(rule_display)
         self.clear_rule_input_window()
+
+        self.log_handle.logging('parse zip file', LOG_WARNING, 'clear all the rule.')
         return
 
 
